@@ -19,4 +19,5 @@ The app output is limited to:
 4. Choose filter values and view the generated device list.
 
 ## Changelog
+- 0.1.1: Fix install/runtime error by switching device enumeration to `getAllDevices()`.
 - 0.1.0: Initial release with dynamic filter UI and device list output.

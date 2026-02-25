@@ -1,6 +1,6 @@
 import groovy.transform.Field
 
-@Field static final String APP_VERSION = "0.1.0"
+@Field static final String APP_VERSION = "0.1.1"
 
 definition(
     name: "Hubitat Device List",
@@ -29,18 +29,9 @@ def mainPage() {
         }
         section("Device List") {
             List<Map> rows = getFilteredDevices().collect { device ->
-                [
-                    id: device.id,
-                    name: device.displayName,
-                    type: getDeviceType(device),
-                    room: getDeviceRoom(device)
-                ]
+                [id: device.id, name: device.displayName, type: getDeviceType(device), room: getDeviceRoom(device)]
             }
-            if (rows) {
-                paragraph rows.collect { "ID: ${it.id} | Name: ${it.name} | Type: ${it.type} | Room: ${it.room}" }.join("\n")
-            } else {
-                paragraph "No devices match the selected filters."
-            }
+            paragraph rows ? rows.collect { "ID: ${it.id} | Name: ${it.name} | Type: ${it.type} | Room: ${it.room}" }.join("\n") : "No devices match the selected filters."
         }
     }
 }
@@ -50,7 +41,7 @@ def updated() { initialize() }
 def initialize() {}
 
 private List getFilteredDevices() {
-    return location.getDevices().findAll { device ->
+    allDevices().findAll { device ->
         (deviceTypeFilter == "Any" || getDeviceType(device) == deviceTypeFilter) &&
         (roomFilter == "Any" || getDeviceRoom(device) == roomFilter) &&
         (protocolFilter == "Any" || getProtocol(device) == protocolFilter)
@@ -58,24 +49,29 @@ private List getFilteredDevices() {
 }
 
 private List<String> getDeviceTypes() {
-    return location.getDevices().collect { getDeviceType(it) }.unique().sort()
+    allDevices().collect { getDeviceType(it) }.findAll { it }.unique().sort()
 }
 
 private List<String> getRooms() {
-    return location.getDevices().collect { getDeviceRoom(it) }.unique().sort()
+    allDevices().collect { getDeviceRoom(it) }.findAll { it }.unique().sort()
+}
+
+private List allDevices() {
+    if (metaClass.respondsTo(this, "getAllDevices")) return getAllDevices() ?: []
+    return []
 }
 
 private String getDeviceType(device) {
-    return device.typeName ?: device.capabilities?.collect { it.name }?.join(", ") ?: "Unknown"
+    device?.typeName ?: device?.capabilities?.collect { it.name }?.join(", ") ?: "Unknown"
 }
 
 private String getDeviceRoom(device) {
-    def room = device.metaClass.respondsTo(device, "getRoomName") ? device.getRoomName() : device.properties?.roomName
-    return room ?: "Unassigned"
+    def room = device?.metaClass?.respondsTo(device, "getRoomName") ? device.getRoomName() : device?.properties?.roomName
+    room ?: "Unassigned"
 }
 
 private String getProtocol(device) {
-    if (device.hasProperty("zigbeeId") && device.zigbeeId) return "Zigbee"
-    if (device.hasProperty("zwaveNodeId") && device.zwaveNodeId != null) return "Z-Wave"
-    return "Other"
+    if (device?.hasProperty("zigbeeId") && device.zigbeeId) return "Zigbee"
+    if (device?.hasProperty("zwaveNodeId") && device.zwaveNodeId != null) return "Z-Wave"
+    "Other"
 }
