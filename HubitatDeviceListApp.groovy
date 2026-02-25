@@ -1,6 +1,6 @@
 import groovy.transform.Field
 
-@Field static final String APP_VERSION = "0.1.3"
+@Field static final String APP_VERSION = "0.1.4"
 
 definition(
     name: "Hubitat Device List",
@@ -27,15 +27,22 @@ def mainPage() {
             input "authorizedDevices", "capability.*", title: "Authorized Devices", multiple: true, required: false, submitOnChange: true
         }
         section("Filters") {
-            input "deviceTypeFilter", "enum", title: "Device Type", options: ["Any"] + getDeviceTypes(), defaultValue: "Any", required: false
-            input "roomFilter", "enum", title: "Room", options: ["Any"] + getRooms(), defaultValue: "Any", required: false
-            input "protocolFilter", "enum", title: "Protocol", options: ["Any", "Zigbee", "Z-Wave"], defaultValue: "Any", required: false
+            input "deviceTypeFilter", "enum", title: "Device Type", options: ["Any"] + getDeviceTypes(), defaultValue: "Any", required: false, submitOnChange: true
+            input "roomFilter", "enum", title: "Room", options: ["Any"] + getRooms(), defaultValue: "Any", required: false, submitOnChange: true
+            input "protocolFilter", "enum", title: "Protocol", options: ["Any", "Zigbee", "Z-Wave"], defaultValue: "Any", required: false, submitOnChange: true
         }
+
+        List<Map> rows = getFilteredDevices().collect { device ->
+            [id: device.id, name: device.displayName, type: getDeviceType(device), room: getDeviceRoom(device)]
+        }
+        String copyText = rows.collect { "${it.id}\t${it.name}\t${it.type}\t${it.room}" }.join("\n")
+
         section("Device List") {
-            List<Map> rows = getFilteredDevices().collect { device ->
-                [id: device.id, name: device.displayName, type: getDeviceType(device), room: getDeviceRoom(device)]
-            }
             paragraph rows ? rows.collect { "ID: ${it.id} | Name: ${it.name} | Type: ${it.type} | Room: ${it.room}" }.join("\n") : "No devices match the selected filters."
+        }
+        section("Copy/Paste Output") {
+            paragraph "Columns: Device ID, Device Name, Type, Room"
+            input "outputPreview", "textarea", title: "Filtered Device Rows", defaultValue: copyText, required: false
         }
     }
 }
