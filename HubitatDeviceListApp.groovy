@@ -1,6 +1,6 @@
 import groovy.transform.Field
 
-@Field static final String APP_VERSION = "0.1.1"
+@Field static final String APP_VERSION = "0.1.2"
 
 definition(
     name: "Hubitat Device List",
@@ -57,8 +57,11 @@ private List<String> getRooms() {
 }
 
 private List allDevices() {
-    if (metaClass.respondsTo(this, "getAllDevices")) return getAllDevices() ?: []
-    return []
+    try {
+        return getAllDevices() ?: []
+    } catch (ignored) {
+        return []
+    }
 }
 
 private String getDeviceType(device) {
