@@ -1,6 +1,6 @@
 import groovy.transform.Field
 
-@Field static final String APP_VERSION = "0.1.2"
+@Field static final String APP_VERSION = "0.1.3"
 
 definition(
     name: "Hubitat Device List",
@@ -22,10 +22,14 @@ preferences {
 
 def mainPage() {
     dynamicPage(name: "mainPage") {
+        section("Device Access") {
+            paragraph "Hubitat apps only see devices you authorize. Select one or more devices to populate filters and results."
+            input "authorizedDevices", "capability.*", title: "Authorized Devices", multiple: true, required: false, submitOnChange: true
+        }
         section("Filters") {
-            input "deviceTypeFilter", "enum", title: "Device Type", options: ["Any"] + getDeviceTypes(), defaultValue: "Any", required: true
-            input "roomFilter", "enum", title: "Room", options: ["Any"] + getRooms(), defaultValue: "Any", required: true
-            input "protocolFilter", "enum", title: "Protocol", options: ["Any", "Zigbee", "Z-Wave"], defaultValue: "Any", required: true
+            input "deviceTypeFilter", "enum", title: "Device Type", options: ["Any"] + getDeviceTypes(), defaultValue: "Any", required: false
+            input "roomFilter", "enum", title: "Room", options: ["Any"] + getRooms(), defaultValue: "Any", required: false
+            input "protocolFilter", "enum", title: "Protocol", options: ["Any", "Zigbee", "Z-Wave"], defaultValue: "Any", required: false
         }
         section("Device List") {
             List<Map> rows = getFilteredDevices().collect { device ->
@@ -41,27 +45,25 @@ def updated() { initialize() }
 def initialize() {}
 
 private List getFilteredDevices() {
-    allDevices().findAll { device ->
-        (deviceTypeFilter == "Any" || getDeviceType(device) == deviceTypeFilter) &&
-        (roomFilter == "Any" || getDeviceRoom(device) == roomFilter) &&
-        (protocolFilter == "Any" || getProtocol(device) == protocolFilter)
+    sourceDevices().findAll { device ->
+        (deviceTypeFilter in [null, "Any"] || getDeviceType(device) == deviceTypeFilter) &&
+        (roomFilter in [null, "Any"] || getDeviceRoom(device) == roomFilter) &&
+        (protocolFilter in [null, "Any"] || getProtocol(device) == protocolFilter)
     }.sort { a, b -> a.displayName <=> b.displayName }
 }
 
 private List<String> getDeviceTypes() {
-    allDevices().collect { getDeviceType(it) }.findAll { it }.unique().sort()
+    sourceDevices().collect { getDeviceType(it) }.unique().sort()
 }
 
 private List<String> getRooms() {
-    allDevices().collect { getDeviceRoom(it) }.findAll { it }.unique().sort()
+    sourceDevices().collect { getDeviceRoom(it) }.unique().sort()
 }
 
-private List allDevices() {
-    try {
-        return getAllDevices() ?: []
-    } catch (ignored) {
-        return []
-    }
+private List sourceDevices() {
+    List selected = (authorizedDevices instanceof List) ? authorizedDevices : (authorizedDevices ? [authorizedDevices] : [])
+    if (selected) return selected
+    try { return getAllDevices() ?: [] } catch (ignored) { return [] }
 }
 
 private String getDeviceType(device) {

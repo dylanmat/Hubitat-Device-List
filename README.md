@@ -19,6 +19,7 @@ The app output is limited to:
 4. Choose filter values and view the generated device list.
 
 ## Changelog
+- 0.1.3: Added explicit device authorization input so filters and results populate reliably in Hubitat app permissions model.
 - 0.1.2: Fix empty results by calling `getAllDevices()` directly with safe fallback.
 - 0.1.1: Fix install/runtime error by switching device enumeration to `getAllDevices()`.
 - 0.1.0: Initial release with dynamic filter UI and device list output.
