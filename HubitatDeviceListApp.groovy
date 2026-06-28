@@ -4,8 +4,8 @@ import groovy.transform.Field
 
 definition(
     name: "Hubitat Device List",
-    namespace: "hubitat.community",
-    author: "Codex",
+    namespace: "dylanm.hdl",
+    author: "Dylan M",
     description: "List Hubitat devices with simple filters.",
     category: "Convenience",
     singleInstance: true,
