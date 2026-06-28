@@ -6,11 +6,13 @@ This repository contains a Hubitat App (`HubitatDeviceListApp.groovy`) that list
 - Room
 - Protocol (Any, Zigbee, or Z-Wave)
 
-The app output is limited to:
+The app output includes:
 - Device ID
 - Device Name
 - Type
 - Room
+- Zigbee device data: application, manufacturer, model, software build
+- Z-Wave device data: device type, manufacturer, MSR
 
 ## Installation
 1. In Hubitat, go to **Apps Code**.
@@ -27,6 +29,13 @@ The app output is limited to:
    - Device Name
    - Type
    - Room
+   - Zigbee Application
+   - Zigbee Manufacturer
+   - Zigbee Model
+   - Zigbee Software Build
+   - Z-Wave Device Type
+   - Z-Wave Manufacturer
+   - Z-Wave MSR
 
 ## Versioning
 This project uses `APP_VERSION` in `HubitatDeviceListApp.groovy`.
@@ -36,6 +45,7 @@ Every branch update and pull request must bump version as follows:
 - Major changes: `1.0.0`
 
 ## Changelog
+- 0.2.0: Added Zigbee and Z-Wave device data fields to device list and copy/paste output.
 - 0.1.4: Added copy/paste output textarea with tab-delimited rows and submit-on-change filters for faster refresh.
 - 0.1.3: Added explicit device authorization input so filters and results populate reliably in Hubitat app permissions model.
 - 0.1.2: Fix empty results by calling `getAllDevices()` directly with safe fallback.

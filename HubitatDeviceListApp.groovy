@@ -1,6 +1,6 @@
 import groovy.transform.Field
 
-@Field static final String APP_VERSION = "0.1.4"
+@Field static final String APP_VERSION = "0.2.0"
 
 definition(
     name: "Hubitat Device List",
@@ -32,16 +32,14 @@ def mainPage() {
             input "protocolFilter", "enum", title: "Protocol", options: ["Any", "Zigbee", "Z-Wave"], defaultValue: "Any", required: false, submitOnChange: true
         }
 
-        List<Map> rows = getFilteredDevices().collect { device ->
-            [id: device.id, name: device.displayName, type: getDeviceType(device), room: getDeviceRoom(device)]
-        }
-        String copyText = rows.collect { "${it.id}\t${it.name}\t${it.type}\t${it.room}" }.join("\n")
+        List<Map> rows = getFilteredDevices().collect { device -> buildDeviceRow(device) }
+        String copyText = rows.collect { formatCopyRow(it) }.join("\n")
 
         section("Device List") {
-            paragraph rows ? rows.collect { "ID: ${it.id} | Name: ${it.name} | Type: ${it.type} | Room: ${it.room}" }.join("\n") : "No devices match the selected filters."
+            paragraph rows ? rows.collect { formatDeviceListRow(it) }.join("\n") : "No devices match the selected filters."
         }
         section("Copy/Paste Output") {
-            paragraph "Columns: Device ID, Device Name, Type, Room"
+            paragraph "Columns: Device ID, Device Name, Type, Room, Zigbee Application, Zigbee Manufacturer, Zigbee Model, Zigbee Software Build, Z-Wave Device Type, Z-Wave Manufacturer, Z-Wave MSR"
             input "outputPreview", "textarea", title: "Filtered Device Rows", defaultValue: copyText, required: false
         }
     }
@@ -80,6 +78,63 @@ private String getDeviceType(device) {
 private String getDeviceRoom(device) {
     def room = device?.metaClass?.respondsTo(device, "getRoomName") ? device.getRoomName() : device?.properties?.roomName
     room ?: "Unassigned"
+}
+
+private Map buildDeviceRow(device) {
+    String protocol = getProtocol(device)
+    [
+        id: device.id,
+        name: device.displayName,
+        type: getDeviceType(device),
+        room: getDeviceRoom(device),
+        zigbeeApplication: protocol == "Zigbee" ? getDeviceDataValue(device, "application") : "",
+        zigbeeManufacturer: protocol == "Zigbee" ? getDeviceDataValue(device, "manufacturer") : "",
+        zigbeeModel: protocol == "Zigbee" ? getDeviceDataValue(device, "model") : "",
+        zigbeeSoftwareBuild: protocol == "Zigbee" ? getDeviceDataValue(device, "softwareBuild") : "",
+        zwaveDeviceType: protocol == "Z-Wave" ? getDeviceDataValue(device, "deviceType") : "",
+        zwaveManufacturer: protocol == "Z-Wave" ? getDeviceDataValue(device, "manufacturer") : "",
+        zwaveMsr: protocol == "Z-Wave" ? getDeviceDataValue(device, "MSR") : ""
+    ]
+}
+
+private String formatCopyRow(Map row) {
+    [
+        row.id,
+        row.name,
+        row.type,
+        row.room,
+        row.zigbeeApplication,
+        row.zigbeeManufacturer,
+        row.zigbeeModel,
+        row.zigbeeSoftwareBuild,
+        row.zwaveDeviceType,
+        row.zwaveManufacturer,
+        row.zwaveMsr
+    ].join("\t")
+}
+
+private String formatDeviceListRow(Map row) {
+    List<String> parts = ["ID: ${row.id}", "Name: ${row.name}", "Type: ${row.type}", "Room: ${row.room}"]
+    [
+        "Zigbee Application": row.zigbeeApplication,
+        "Zigbee Manufacturer": row.zigbeeManufacturer,
+        "Zigbee Model": row.zigbeeModel,
+        "Zigbee Software Build": row.zigbeeSoftwareBuild,
+        "Z-Wave Device Type": row.zwaveDeviceType,
+        "Z-Wave Manufacturer": row.zwaveManufacturer,
+        "Z-Wave MSR": row.zwaveMsr
+    ].each { label, value ->
+        if (value) parts << "${label}: ${value}"
+    }
+    parts.join(" | ")
+}
+
+private String getDeviceDataValue(device, String name) {
+    try {
+        return device?.getDataValue(name)?.toString() ?: ""
+    } catch (ignored) {
+        return ""
+    }
 }
 
 private String getProtocol(device) {
